@@ -1,8 +1,5 @@
 import numpy as np
 
-def main():
-    pass
-
 class ID3:
 
     def __init__(self, dataset, attributes_for_splitting, target_attribute):
@@ -31,6 +28,7 @@ class ID3:
                     summary[a][d[a]] += 1
                 except:
                     summary[a][d[a]] = 1
+        return summary
 
     @staticmethod
     def entropy(dataset, t_attr):
@@ -44,10 +42,11 @@ class ID3:
 
         dataset: list of dictionaries, each element is a different point,
                  dictionary keys are the attributes
-        t_attr:  target attribute that I want to find the entropy with 
-                 respect to
+        t_attr: single attribute
+                target attribute that I want to find the entropy with 
+                 respect to 
         '''
-        summary = ID3.summarize(dataset, t_attr)[t_attr]
+        summary = ID3.summarize(dataset, [t_attr])[t_attr]
         H = 0
         total = sum([s for s in summary.values()])
         for v in summary.values():
@@ -66,7 +65,7 @@ class ID3:
         '''
         # summary is a dictionary where each key is one of the possible
         # values that the data might take for attribute attr
-        summary = ID3.summarize(dataset, attr)[attr]
+        summary = ID3.summarize(dataset, [attr])[attr]
 
         keys = summary.keys()
         splitset = {}
@@ -105,23 +104,30 @@ class ID3:
 
         return IG
 
-    def id3(self, data, attr):
-        root = Node()
-        targetsum = ID3.summarize(data)[self.t_attr]
+    def id3(self, data, attr, willspliton):
+        root = Node(willspliton = willspliton)
+
+        targetsum = ID3.summarize(data, attr + [self.t_attr])[self.t_attr]
 
         # If all data has the same value for the target attribute
         # return a node with that value as the label
         for k in targetsum.keys():
             if targetsum[k] == len(data):
                 root.label = k
+                root.confidence=1
+                root.data = data
+                return root
 
         # If there are no more attributes to split over
         # return a node whose label is the value that the majority
         # of the data has for the target attribute
         if len(attr) == 0:
-            keys = targetsum.keys()
-            vals = targetsum.values()
-            return root.label=keys[np.argmax(vals)]
+            keys = list(targetsum.keys())
+            vals = list(targetsum.values())
+            root.label = keys[np.argmax(vals)]
+            root.confidence=targetsum[root.label]/len(data)
+            root.data = data
+            return root
         
         # Find the attribute that gives the largest information gain
         # and split the dataset into subsets where every point in the 
@@ -131,29 +137,54 @@ class ID3:
         a_split = attr[np.argmax(igs)]
         splitset= ID3.split(data, a_split)
 
+        root.spliton = a_split
+
         newattr = [a for a in attr if a != a_split]
-        for s in splitset:
-            if len(s) == 0:
+        vals = list(splitset.values())
+        keys = list(splitset.keys())
+        for i in range(len(vals)):
+            if len(vals[i]) == 0:
                 print('How did this happen?')
             else:
-                root.addchild(self.id3(s, newattr))
+                root.addchild(
+                        self.id3( vals[i], 
+                                  attr=newattr, 
+                                  willspliton=root.willspliton + [(a_split,keys[i])]
+                                )
+                            )
                 
+        return root
 
-class Node(Object):
-    def __init__(self, label=''):
-        self.label = label
+# add how to navigate the tree
+class Node(object):
+    def __init__(self, willspliton='', label='', confidence=0, spliton=''):
+        self._label = label
         self.children = []
+        self.willspliton = willspliton
+        self.spliton = spliton
+        self.confidence = confidence
+
+    def __repr__(self):
+        s =  'Node({0}({4:2.2f}), willspliton={1}, spliton={2}, numchild={3})'.format(
+                    self.label, 
+                    self.willspliton, 
+                    self.spliton, 
+                    len(self.children),
+                    self.confidence
+                    )
+        return s
 
     @property
     def label(self):
-        return self.label
+        return self._label
 
     @label.setter
     def label(self, l):
-        self.label = l
+        self._label = l
 
     def addchild(self, node):
         self.children.append(node)
+
 
         
 
