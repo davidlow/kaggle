@@ -185,6 +185,13 @@ class Node(object):
     def addchild(self, node):
         self.children.append(node)
 
+    def eval(self, datapt):
+        if len(self.children) == 0:
+            return self.label
+        for c in self.children:
+            if c.willspliton[-1][1] == datapt[self.spliton]:
+                return c.eval(datapt)
+        return -1
 
         
 
