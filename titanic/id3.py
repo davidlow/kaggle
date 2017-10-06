@@ -2,7 +2,66 @@ import numpy as np
 
 class ID3:
 
+    @staticmethod
+    def makeclassifier(dataset, 
+            attributes_for_splitting,
+            target_attribute
+           ):
+        '''
+        Create a decision tree for dataset splitting on all 
+        the arguments in attributes_for_splitting, evaluating on
+        target_attribute
+
+        This should be the time intensive part of the algorithm
+        '''
+        id3  = ID3(dataset, attributes_for_splitting, target_attribute)
+        root = id3.id3(dataset, id3.attr, [])
+        return root
+    
+    @staticmethod
+    def eval(output_of_makeclassifier, datapt):
+        '''
+        Inputs: 
+        whatever makeclassifier outputs (root node, etc)
+
+        datapt to be classified.
+
+        Outputs:
+        whatever the algorithm thinks the datapt should be classified as
+
+        '''
+        return output_of_makeclassifier.eval(datapt)
+
+    @staticmethod
+    def makeclassifierfnct(attributes_for_splitting, target_attribute):
+        '''
+        Returns a function with a single input: the dataset.  Useful for
+        bagging or other applications where you want to hand a function
+        pointer to something.
+        '''
+        return lambda dataset: ID3.makeclassifier(dataset, 
+                                        attributes_for_splitting,
+                                        target_attribute)
+
     def __init__(self, dataset, attributes_for_splitting, target_attribute):
+        '''
+        ID3 decision tree
+
+        INPUTS:
+
+        dataset:    
+            list of dictionaries, each point is a data point, each
+            key of the dictionary is an attribute of that datapoint
+            each value is the value with respect to the attribute,
+
+        attributes_for_splitting:
+            list of attributes used for splitting the dataset into
+            subtrees
+
+        target_attribute:
+            string of attribute that is the critical one, the one
+            we care about
+        '''
         self.dataset = dataset
         self.t_attr  = target_attribute
         self.attr    = attributes_for_splitting
@@ -105,6 +164,9 @@ class ID3:
         return IG
 
     def id3(self, data, attr, willspliton):
+        '''
+        Run id3 
+        '''
         root = Node(willspliton = willspliton)
 
         targetsum = ID3.summarize(data, attr + [self.t_attr])[self.t_attr]

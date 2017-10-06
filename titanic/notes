@@ -1,5 +1,8 @@
-1) implement ID3.  test with pclass, sex, and embarked and see if 
-I can make a classifier that way
++   implement ID3.  test with pclass, sex, and embarked and see if 
+    I can make a classifier that way
 
-2) implement C4.5 for use with all floats (threshold somehow)
+-   implement bagging / boosting 
 
+-   implement decision tree with threshold floats
+
+-   implement other ML algorithms
