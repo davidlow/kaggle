@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 class ID3:
 
@@ -178,6 +179,7 @@ class ID3:
                 root.label = k
                 root.confidence=1
                 root.data = data
+                root.population = len(targetsum)
                 return root
 
         # If there are no more attributes to split over
@@ -189,6 +191,7 @@ class ID3:
             root.label = keys[np.argmax(vals)]
             root.confidence=targetsum[root.label]/len(data)
             root.data = data
+            root.population = len(targetsum)
             return root
         
         # Find the attribute that gives the largest information gain
@@ -219,15 +222,16 @@ class ID3:
 
 # add how to navigate the tree
 class Node(object):
-    def __init__(self, willspliton='', label='', confidence=0, spliton=''):
+    def __init__(self, willspliton='', label='', confidence=0, spliton='', population=0):
         self._label = label
         self.children = []
         self.willspliton = willspliton
         self.spliton = spliton
         self.confidence = confidence
+        self._population = population
 
     def __repr__(self):
-        s =  'Node({0}({4:2.2f}), willspliton={1}, spliton={2}, numchild={3})'.format(
+        s =  'Node(label={0}, confidence=({4:2.2f}), willspliton={1}, spliton={2}, numchild={3})'.format(
                     self.label, 
                     self.willspliton, 
                     self.spliton, 
@@ -239,21 +243,51 @@ class Node(object):
     @property
     def label(self):
         return self._label
+        
 
     @label.setter
     def label(self, l):
         self._label = l
+
+    @property
+    def population(self):
+        if self._population != 0:
+            return self._population
+        return sum( [c.population for c in self.children])
+
+    @population.setter
+    def population(self, p):
+        self._population = p
 
     def addchild(self, node):
         self.children.append(node)
 
     def eval(self, datapt):
         if len(self.children) == 0:
+            if self.label == '':
+                print(self)
+                sys.stdout.flush()
             return self.label
         for c in self.children:
             if c.willspliton[-1][1] == datapt[self.spliton]:
                 return c.eval(datapt)
-        return -1
+
+        sols = {}
+        for c in self.children:
+            thislabel = c.eval(datapt)
+            pop = c.population
+            if thislabel in sols.keys():
+                sols[thislabel] += pop
+            else:
+                sols[thislabel] = pop
+        maxk = 'x'
+        maxv = 0
+        for key,val in zip(sols.keys(), sols.values()):
+            if val > maxv:
+                maxv = val
+                maxk = key
+        return maxk
+
 
         
 
@@ -261,7 +295,7 @@ class Node(object):
 
 
 
-"""
+"""r
 def information_gain(dataset, a, t_a, ATTR):
     '''
     Calculate the information gain of a dataset
